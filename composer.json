@@ -1,20 +1,24 @@
 {
-    "name": "eicesoft/cappa",
-    "description": "The Cappa Framework.",
-    "keywords": ["framework", "mvc"],
-    "type": "library",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "kelezyb",
-            "email": "eicesoft@qq.com"
-        }
-    ],
-    "require": {
-    },
-    "autoload": {
-        "psr-4": {
-          "Cappa\\": "src"
-        }
-      }
+  "name": "eicesoft/cappa",
+  "description": "The Cappa Framework.",
+  "keywords": [
+    "framework",
+    "mvc"
+  ],
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "kelezyb",
+      "email": "eicesoft@qq.com"
+    }
+  ],
+  "require": {
+  },
+  "autoload": {
+    "psr-4": {
+      "Cappa\\": "src",
+      "App\\": "app"
+    }
+  }
 }

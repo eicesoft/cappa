@@ -15,7 +15,7 @@ class Component
 
     private $singleton;
 
-    public function __construct($name=null, $lazy=true, $singleton=false)
+    public function __construct($name=null, $lazy=true, $singleton=true)
     {
         $this->name = $name;
         $this->lazy = $lazy;
