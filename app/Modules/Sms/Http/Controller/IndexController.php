@@ -1,6 +1,4 @@
 <?php
-declare(strict_types=1);
-
 namespace Sms\Http\Controller;
 
 use Cappa\Di\Annotation\Controller;

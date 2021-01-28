@@ -1,4 +1,7 @@
 <?php
 return [
-    'name' => 'test'
+    'name' => 'segasdgasdgas',
+    'app' => [
+        'name' => 'cappa_demo'
+    ]
 ];

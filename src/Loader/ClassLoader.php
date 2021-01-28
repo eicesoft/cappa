@@ -40,7 +40,18 @@ class ClassLoader
             $namespace_name = $namespace_matches[1];
             $class_name = $namespace_name . '\\' . $base_classname;
 
-            Container::get()->make($class_name);
+//            dump($base_classname);
+            $ref = ReflectionManager::get($class_name);
+//            dump($class_name);
+//
+//            var_dump($ref);
+            if ($ref) {
+                $attributies = $ref->getAttributes();
+//            dump($attributies);
+                if (!empty($attributies)) {
+                    Container::get()->make($class_name);
+                }
+            }
         }
 
 //        $this->container()->make($class_name);

@@ -31,19 +31,28 @@ class ReflectionManager
      * @return ReflectionClass
      * @throws ReflectionException
      */
-    public static function get($class_name): ReflectionClass
+    public static function get($class_name)
     {
         if (!isset(self::$reflections[$class_name])) {
-            self::$reflections[$class_name] = new ReflectionClass($class_name);
-        }
+            try {
+                $ref = new ReflectionClass($class_name);
+                if ($ref) {
+                    self::$reflections[$class_name] = $ref;
+                }
 
-        return self::$reflections[$class_name];
+                return $ref;
+            } catch (Exception $ex) {
+                //pass;
+//                dump($ex);
+            }
+        } else {
+            return self::$reflections[$class_name];
+        }
     }
 
     /**
      * @param string $class_name
      * @return mixed
-     * @throws Exception
      */
     public static function create(string $class_name)
     {
@@ -60,7 +69,9 @@ class ReflectionManager
             }
 
             return new Proxy($class_name);
-        } catch (ReflectionException $e) {
+        } catch (Exception $e) {
+            dump($e);
+            return null;
         }
     }
 }

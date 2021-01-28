@@ -14,8 +14,19 @@
     }
   ],
   "require": {
+    "vlucas/phpdotenv": "^5.2",
+    "phpoption/phpoption": "^1.7",
+    "illuminate/database": "^8.11",
+    "symfony/console": "^v5.2.1",
+    "symfony/http-foundation": "^v5.1.5"
+  },
+  "require-dev": {
+    "symfony/var-dumper": "^5.0"
   },
   "autoload": {
+    "files": [
+      "src/functions.php"
+    ],
     "psr-4": {
       "Cappa\\": "src",
       "App\\": "app"
