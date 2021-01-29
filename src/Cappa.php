@@ -55,8 +55,7 @@ class Cappa
 
         $application = Container::get()->make(Http\Application::class);
         $response = $application->handle($request = Request::capture());
-//        $index = new IndexController();
-//        dd($index);
+
         return $application->terminate($request, $response);
     }
 

@@ -8,7 +8,9 @@ use Cappa\Command\CommandManager;
 use Cappa\Di\Annotation\Command;
 use Cappa\Di\Annotation\Component;
 use Cappa\Di\Annotation\Controller;
+use Cappa\Di\Annotation\Route;
 use Cappa\Di\Reflection\ReflectionManager;
+use Cappa\Http\RouterManager;
 use Cappa\ObjectType;
 use Exception;
 use ReflectionClass;
@@ -30,6 +32,11 @@ class Proxy
     private string $name;
 
     private ReflectionClass $reflection;
+
+    /**
+     * @var bool
+     */
+    private $is_init = false;
 
     /**
      * @var object
@@ -64,25 +71,23 @@ class Proxy
             $this->initAttr();
 
             try {
+//                dump($this->name . ":" . $this->object_type);
                 if (!$this->object_type->compare(ObjectType::Other)) {
-//                    dump($this->name . ":" . $this->object_type);
 
                     $obj = Container::get()->get($this->name);
+//                    dump($this->name . ":" . var_export($obj, true));
                     if (!$obj) {
                         $obj = $this->reflection->newInstance();
-
                         Container::get()->put($obj);
                     }
 
                     $this->proxy_object = $obj;
-//                    dump($obj);
+
+                    $this->pre_process();
                 }
             } catch (ReflectionException $e) {
 
             }
-
-            $this->autowire();
-            $this->pre_process();
         }
     }
 
@@ -96,20 +101,25 @@ class Proxy
             }
 
             if ($this->object_type->compare(ObjectType::Controller)) {  //控制器和路由注册
-                $attr_obj = $this->getAttribute(Controller::class);
-                $r = $this->reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
-                dump($attr_obj);
-                dump($r);
+                /** @var Controller $attr_obj */
+                $attr_obj_ref = $this->getAttribute(Controller::class);
+                $methods = $this->reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
+                foreach ($methods as $method) {
+                    foreach ($method->getAttributes() as $route_attr_ref) {
+                        $route_attr_obj = $route_attr_ref->newInstance();
+                        if ($route_attr_obj instanceof Route) {
+                            RouterManager::add($attr_obj_ref->getPath() . $route_attr_obj->getPath(), $this, $method->getName());
+                        }
+                    }
+                }
             }
         }
     }
 
-    private function autowire()
+    private function autowired()
     {
-        $reflection_properties = $this->reflection->getProperties(ReflectionProperty::IS_PRIVATE);
-//        var_dump($reflection_properties);
+        $reflection_properties = $this->reflection->getProperties(ReflectionProperty::IS_PRIVATE | ReflectionProperty::IS_PROTECTED);
         foreach ($reflection_properties as $reflection_property) {
-//            $reflection_property->ge();
             $reflection_property->setAccessible(true);
             $attribute = $reflection_property->getAttributes();
             $type = $reflection_property->getType();
@@ -117,18 +127,23 @@ class Proxy
             if ($attribute) {
                 $type_name = $type->getName();
                 $var_reflection = ReflectionManager::get($type_name);
-//                var_dump($var_reflection);
-//                dump($type_name);
 
                 if ($var_reflection->isInterface()) {
-//                    var_dump('is interface');
                     //TODO interface inject
                 } else {
-                    $obj = ReflectionManager::create($type_name);
-//                    dump($obj->getProxyObject());
-                    $reflection_property->setValue($this->proxy_object, $obj->getProxyObject()->getProxyObject());
+                    $obj = Container::get()->get($type_name);
+//                    dump([$type_name, $obj]);
+                    $reflection_property->setValue($this->proxy_object, $obj->getProxyObject());
                 }
             }
+        }
+    }
+
+    public function warp()
+    {
+        if (!$this->is_init) {
+            $this->is_init = true;
+            $this->autowired();
         }
     }
 
@@ -150,7 +165,7 @@ class Proxy
         if (!$this->proxy_object) {
             //Empty object
         }
-//dd($name);
+//        dump($this->proxy_object::class . ':' . $name);
         if (!method_exists($this->proxy_object, $name)) {
             //Object method don't exists
         }

@@ -17,7 +17,7 @@ final class Controller extends Document
      * @param string $path
      * @param string $desc
      */
-    #[Pure] public function __construct(string $path = '/', string $desc = '')
+    #[Pure] public function __construct(string $path = '', string $desc = '')
     {
         $this->path = $path;
         parent::__construct($desc);

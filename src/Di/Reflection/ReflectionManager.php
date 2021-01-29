@@ -29,7 +29,6 @@ class ReflectionManager
     /**
      * @param $class_name
      * @return ReflectionClass
-     * @throws ReflectionException
      */
     public static function get($class_name)
     {
@@ -58,7 +57,7 @@ class ReflectionManager
     {
         try {
             $reflection = self::get($class_name);
-
+//            dump($class_name);
             $interfaces = $reflection->getInterfaceNames();
             if ($interfaces) {
                 foreach ($interfaces as $interface) {

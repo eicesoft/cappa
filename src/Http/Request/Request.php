@@ -31,6 +31,7 @@ class Request extends SymfonyRequest implements Arrayable, ArrayAccess
      */
     protected Closure $routeResolver;
 
+
     /**
      * Create a new Illuminate HTTP request from server variables.
      *
@@ -265,6 +266,19 @@ class Request extends SymfonyRequest implements Arrayable, ArrayAccess
         }
 
         return $route->parameter($param, $default);
+    }
+
+    /**
+     * Set the user resolver callback.
+     *
+     * @param Closure $callback
+     * @return Request
+     */
+    public function setRouteResolver(Closure $callback): Request
+    {
+        $this->routeResolver = $callback;
+
+        return $this;
     }
 
     /**
