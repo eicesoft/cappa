@@ -31,6 +31,14 @@ class ArrayContainer implements ContainerInterface
         return $this->values[$id] ?? null;
     }
 
+    public function warp()
+    {
+        /** @var Proxy $value */
+        foreach($this->values as $value) {
+            $value->warp();
+        }
+    }
+
     /**
      * @param string $id
      * @return bool

@@ -4,8 +4,14 @@ declare(strict_types=1);
 namespace Cappa\Di;
 
 
+use Cappa\Command\CommandManager;
+use Cappa\Di\Annotation\Command;
 use Cappa\Di\Annotation\Component;
+use Cappa\Di\Annotation\Controller;
+use Cappa\Di\Annotation\Route;
 use Cappa\Di\Reflection\ReflectionManager;
+use Cappa\Http\RouterManager;
+use Cappa\ObjectType;
 use Exception;
 use ReflectionClass;
 use ReflectionException;
@@ -28,9 +34,19 @@ class Proxy
     private ReflectionClass $reflection;
 
     /**
+     * @var bool
+     */
+    private $is_init = false;
+
+    /**
      * @var object
      */
     private $proxy_object;
+
+    /**
+     * @var ObjectType
+     */
+    private ObjectType $object_type;
 
     /**
      * Proxy constructor.
@@ -46,60 +62,97 @@ class Proxy
         $this->name = $name;
 
         $this->reflection = ReflectionManager::get($name);
-        $attributes = $this->reflection->getAttributes();
+        $this->init();
+    }
 
-        if ($attributes) {
-            foreach ($attributes as $attribute) {
-                $attr_obj = $attribute->newInstance();
-                if ($attr_obj instanceof Component) {
-//                    var_dump($attr_obj);
-                    if (!$attr_obj->isLazy()) { //非延迟
-                        $this->init();
+    private function init()
+    {
+        if ($this->proxy_object === null) {
+            $this->initAttr();
+
+            try {
+//                dump($this->name . ":" . $this->object_type);
+                if (!$this->object_type->compare(ObjectType::Other)) {
+
+                    $obj = Container::get()->get($this->name);
+//                    dump($this->name . ":" . var_export($obj, true));
+                    if (!$obj) {
+                        $obj = $this->reflection->newInstance();
+                        Container::get()->put($obj);
+                    }
+
+                    $this->proxy_object = $obj;
+
+                    $this->pre_process();
+                }
+            } catch (ReflectionException $e) {
+
+            }
+        }
+    }
+
+    private function pre_process()
+    {
+        if ($this->object_type instanceof ObjectType) {
+            if ($this->object_type->compare(ObjectType::Command)) {
+                /** @var Command $attr_obj */
+                $attr_obj = $this->getAttribute(Command::class);
+                CommandManager::add($this->proxy_object, $attr_obj->getName(), $attr_obj->getDesc());
+            }
+
+            if ($this->object_type->compare(ObjectType::Controller)) {  //控制器和路由注册
+                /** @var Controller $attr_obj */
+                $attr_obj_ref = $this->getAttribute(Controller::class);
+                $methods = $this->reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
+                foreach ($methods as $method) {
+                    foreach ($method->getAttributes() as $route_attr_ref) {
+                        $route_attr_obj = $route_attr_ref->newInstance();
+                        if ($route_attr_obj instanceof Route) {
+                            RouterManager::add($attr_obj_ref->getPath() . $route_attr_obj->getPath(), $this, $method->getName());
+                        }
                     }
                 }
             }
         }
     }
 
-    private function init()
+    private function autowired()
     {
-        if (!$this->proxy_object) {
-            try {
-                $obj = Container::get()->get($this->name);
-                if (!$obj) {
-                    $obj = $this->reflection->newInstance();
+        $reflection_properties = $this->reflection->getProperties(ReflectionProperty::IS_PRIVATE | ReflectionProperty::IS_PROTECTED);
+        foreach ($reflection_properties as $reflection_property) {
+            $reflection_property->setAccessible(true);
+            $attribute = $reflection_property->getAttributes();
+            $type = $reflection_property->getType();
 
-                    Container::get()->put($obj);
+            if ($attribute) {
+                $type_name = $type->getName();
+                $var_reflection = ReflectionManager::get($type_name);
+
+                if ($var_reflection->isInterface()) {
+                    //TODO interface inject
+                } else {
+                    $obj = Container::get()->get($type_name);
+//                    dump([$type_name, $obj]);
+                    $reflection_property->setValue($this->proxy_object, $obj->getProxyObject());
                 }
-
-                $this->proxy_object = $obj;
-            } catch (ReflectionException $e) {
-
             }
-
-            $this->autowire();
         }
     }
 
-    private function autowire()
+    public function warp()
     {
-        $reflection_properties = $this->reflection->getProperties(ReflectionProperty::IS_PRIVATE);
-//        var_dump($reflection_properties);
-        foreach ($reflection_properties as $reflection_property) {
-//            $reflection_property->ge();
-            $type = $reflection_property->getType();
-            if ($type && $type instanceof \ReflectionType) {
-                $type_name = $type->getName();
-                $var_reflection = ReflectionManager::get($type_name);
-                $reflection_property->setAccessible(true);
-
-                if ($var_reflection->isInterface()) {
-                    var_dump('is interface');
-                } else {
-                    $reflection_property->setValue(ReflectionManager::create($type_name));
-                }
-            }
+        if (!$this->is_init) {
+            $this->is_init = true;
+            $this->autowired();
         }
+    }
+
+    /**
+     * @return object
+     */
+    public function getProxyObject(): object
+    {
+        return $this->proxy_object;
     }
 
     /**
@@ -109,16 +162,49 @@ class Proxy
      */
     public function __call(string $name, array $arguments): mixed
     {
-        $this->init();
-
         if (!$this->proxy_object) {
             //Empty object
         }
-
+//        dump($this->proxy_object::class . ':' . $name);
         if (!method_exists($this->proxy_object, $name)) {
             //Object method don't exists
         }
 
         return call_user_func_array([$this->proxy_object, $name], $arguments);
+    }
+
+    private $attribures = [];
+
+    public function getAttribute($name)
+    {
+        return $this->attribures[$name] ?? null;
+    }
+
+    private function initAttr(): void
+    {
+        $attributes = $this->reflection->getAttributes();
+
+        $this->object_type = ObjectType::valueOf(ObjectType::Other);
+
+        if ($attributes) {
+            foreach ($attributes as $attribute) {
+                $attr_obj = $attribute->newInstance();
+
+                $this->attribures[$attribute->getName()] = $attr_obj;
+
+                if ($attr_obj instanceof Component) {
+                    $this->object_type = ObjectType::valueOf(ObjectType::Component);
+                }
+//
+                if ($attr_obj instanceof Command) {
+                    $this->object_type = ObjectType::valueOf(ObjectType::Command);
+                }
+
+                if ($attr_obj instanceof Controller) {
+                    $this->object_type = ObjectType::valueOf(ObjectType::Controller);
+                }
+//                dump($this->name.':'. $this->object_type->value());
+            }
+        }
     }
 }

@@ -1,14 +1,26 @@
 <?php
 
-use Cappa\Cappa;
-use Cappa\Di\Container;
-use Cappa\Test;
+use Cappa\Http\Response\Response;
+use Illuminate\Database\Capsule\Manager;
 
-include 'vendor/autoload.php';
+include __DIR__ . '/vendor/autoload.php';
 
-$cappa = Cappa::Instance();
-$cappa->add_scan_paths(__DIR__ . '/app');
-$cappa->execute();
-///** @var Test $obj */
-//$obj = Container::get()->get(Test::class);
-//var_dump($obj->test());
+$config = [
+    'ROOT_PATH' => __DIR__,
+    'APP_PATH' => __DIR__ . '/app'
+];
+
+try {
+//    $capsule = new Manager;
+//    $capsule->addConnection([]);
+//    $capsule->setAsGlobal();
+//    $capsule->bootEloquent();
+    app()->config($config)
+        ->scan_path($config['APP_PATH'])
+        ->add_error_handler(function ($exception) {
+            dump($exception);
+        })
+        ->execute();
+} catch (Exception $ex) {
+    (new Response('<pre>' . $ex::class . '' . $ex->getMessage() . PHP_EOL . $ex->getTraceAsString() . '</pre>', 500))->send();
+}

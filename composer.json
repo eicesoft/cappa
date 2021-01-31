@@ -1,20 +1,35 @@
 {
-    "name": "eicesoft/cappa",
-    "description": "The Cappa Framework.",
-    "keywords": ["framework", "mvc"],
-    "type": "library",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "kelezyb",
-            "email": "eicesoft@qq.com"
-        }
+  "name": "eicesoft/cappa",
+  "description": "The Cappa Framework.",
+  "keywords": [
+    "framework",
+    "mvc"
+  ],
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "kelezyb",
+      "email": "eicesoft@qq.com"
+    }
+  ],
+  "require": {
+    "vlucas/phpdotenv": "^5.2",
+    "phpoption/phpoption": "^1.7",
+    "illuminate/database": "^8.25",
+    "symfony/console": "^v5.2.1",
+    "symfony/http-foundation": "^v5.1.5"
+  },
+  "require-dev": {
+    "symfony/var-dumper": "^5.0"
+  },
+  "autoload": {
+    "files": [
+      "src/functions.php"
     ],
-    "require": {
-    },
-    "autoload": {
-        "psr-4": {
-          "Cappa\\": "src"
-        }
-      }
+    "psr-4": {
+      "Cappa\\": "src",
+      "App\\": "app"
+    }
+  }
 }
