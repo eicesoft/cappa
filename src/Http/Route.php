@@ -57,7 +57,7 @@ class Route
         try {
             $result = call_user_func_array($this->callable, [$request]);
         } catch (Exception $exception) {
-            return Response::factory(Response::HTTP_INTERNAL_SERVER_ERROR);
+            return Response::factory(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
         }
 
         return $result;

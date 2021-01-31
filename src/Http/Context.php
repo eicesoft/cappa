@@ -5,25 +5,16 @@ namespace Cappa\Http;
 
 use Cappa\Di\Annotation\Component;
 use Cappa\Http\Response\Response;
+use Illuminate\Container\Container;
 
 #[Component]
 class Context
 {
-    private Response $response;
-
     /**
      * @return mixed
      */
     public function getResponse(): Response
     {
-        return $this->response;
-    }
-
-    /**
-     * @param mixed $response
-     */
-    public function setResponse(Response $response): void
-    {
-        $this->response = $response;
+        return Container::getInstance()->get(Response::class);
     }
 }

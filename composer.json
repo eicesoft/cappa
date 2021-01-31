@@ -16,7 +16,7 @@
   "require": {
     "vlucas/phpdotenv": "^5.2",
     "phpoption/phpoption": "^1.7",
-    "illuminate/database": "^8.11",
+    "illuminate/database": "^8.25",
     "symfony/console": "^v5.2.1",
     "symfony/http-foundation": "^v5.1.5"
   },

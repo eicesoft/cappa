@@ -4,17 +4,23 @@ declare(strict_types=1);
 namespace Cappa\Http;
 
 
-use Cappa\Config;
-use Cappa\Di\Annotation\Autowiring;
 use Cappa\Di\Annotation\Component;
 use Cappa\Di\Container;
 use Cappa\Http\Request\Request;
 use Cappa\Http\Response\Response;
 use Composer\Autoload\ClassLoader;
+use Illuminate\Contracts\Container\BindingResolutionException;
 
 #[Component]
 class Application implements Kernel
 {
+    private \Illuminate\Container\Container $container;
+
+    public function __construct()
+    {
+        $this->container = \Illuminate\Container\Container::getInstance();
+    }
+
     /**
      * 加载子模块
      */
@@ -54,6 +60,7 @@ class Application implements Kernel
     /**
      * @param Request $request
      * @return Response
+     * @throws BindingResolutionException
      */
     public function handle(Request $request): Response
     {
@@ -62,11 +69,19 @@ class Application implements Kernel
         $route = RouterManager::route($request->getPathInfo());
 
         if ($route) {
-            $response = Response::base();
-            $route->controller()->getContext()->setResponse($response);
+            /** @var Response $response */
+            $response = $this->container->make(Response::class, []);
+            $response->prepare($request);
+            $this->container->singleton(Response::class, function () use ($response) {
+                return $response;
+            });
             $result = $route->handle($request);
-            $response->setBody($result);
-            return $response;
+            if ($result instanceof Response) {
+                return $result;
+            } else {
+                $response->setBody($result);
+                return $response;
+            }
         } else {
             return Response::factory(Response::HTTP_NOT_FOUND);
         }

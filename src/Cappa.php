@@ -53,6 +53,7 @@ class Cappa
     {
         $this->init();
 
+        /** @var Http\Application $application */
         $application = Container::get()->make(Http\Application::class);
         $response = $application->handle($request = Request::capture());
 

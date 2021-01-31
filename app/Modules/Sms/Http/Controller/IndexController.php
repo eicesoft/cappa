@@ -13,8 +13,8 @@ class IndexController extends BaseController
     public function index(Request $request)
     {
 //        dump($this->context);
-        $this->context->getResponse()->header('Server', 'jjjjjj');
-        $this->context->getResponse()->setCharset('sdgs');
+//        $this->getResponse()->header('SSSS', 'sdsdg');
+        $this->getResponse()->header('Server', 'jjjjjj');
         return [
             'code' => 400,
             'message' => 'text: ' . $request->input('name')

@@ -4,26 +4,31 @@
 namespace Cappa\Http\Response;
 
 use Symfony\Component\HttpFoundation\Response as BaseResponse;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 class Response extends BaseResponse
 {
-    public function header($key, $value)
+    public function setServer($name)
     {
-        $this->headers->add([$key => $value]);
+        $this->headers->set('Server', $name);
     }
 
     public function setBody($content)
     {
-        dump($this->headers);
         if (is_object($content)) {
-            $text = serialize($content);
+            $this->headers->set('Content-Type', 'application/json');
+            $text = json_encode($content, true);
         } elseif (is_array($content)) {
+            $this->headers->set('Content-Type', 'application/json');
+
             $text = json_encode($content);
+        } elseif (is_string($content)) {
+            $text = $content;
         } elseif (is_scalar($content)) {
             $text = $content;
         } else {
-            $text = var_export($content, true);
+            $this->headers->set('Content-Type', 'application/json');
+
+            $text = json_encode($content, true);
         }
 
         $this->setContent($text);
@@ -31,19 +36,15 @@ class Response extends BaseResponse
 
     /**
      * @param int $code
+     * @param null $message
      * @return Response
      */
-    public static function factory(int $code): Response
+    public static function factory(int $code, $message = null): Response
     {
-        if (self::$statusTexts[$code]) {
-            return new Response(self::$statusTexts[$code], $code);
-        } else {
-            return new Response("The unknown Code", $code);
+        if ($message === null) {
+            $message = self::$statusTexts[$code] ?? 'unknown code exception';
         }
-    }
 
-    public static function base(): Response
-    {
-        return new Response();
+        return new Response($message, $code);
     }
 }
